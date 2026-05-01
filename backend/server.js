@@ -5,6 +5,7 @@ require('dotenv').config();
 require('./config/db');
 const authRoutes = require('./routes/auth');
 const workerRoutes = require('./routes/worker');
+const scoreRoutes = require('./routes/score');
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET is not configured.');
@@ -18,6 +19,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/worker', workerRoutes);
+app.use('/api/score', scoreRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
