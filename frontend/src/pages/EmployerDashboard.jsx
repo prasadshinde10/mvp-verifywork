@@ -134,7 +134,7 @@ function EmployerDashboard() {
         min_trust_score: formatNumber(formState.minTrustScore, 0),
       }
       setJobs((prev) => [newJob, ...prev])
-      setFormState({ tradeRequired: formState.tradeRequired, minTrustScore: '' })
+      setFormState({ tradeRequired: 'General', minTrustScore: '20' })
       setActiveJobId(newJob.id)
       setFormStatus('Job posted successfully.')
       await loadShortlist(newJob.id)

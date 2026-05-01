@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 import TrustScoreCard from '../components/TrustScoreCard'
@@ -80,7 +80,7 @@ const formatDocument = (doc) => ({
   id: doc.id,
   type: formatDocType(doc.doc_type),
   status: formatStatus(doc.status),
-  updatedAt: formatDate(doc.created_at),
+  createdAt: formatDate(doc.created_at),
 })
 
 function WorkerDashboard() {
@@ -119,7 +119,7 @@ function WorkerDashboard() {
     navigate('/login', { replace: true })
   }
 
-  const ensureProfile = async () => {
+  const ensureProfile = useCallback(async () => {
     try {
       const response = await api.get('/api/worker/profile')
       return response.data
@@ -137,9 +137,9 @@ function WorkerDashboard() {
       const created = await api.post('/api/worker/profile', createPayload)
       return created.data
     }
-  }
+  }, [userEmail, workerName])
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     setIsLoading(true)
     setLoadError('')
     try {
@@ -157,11 +157,11 @@ function WorkerDashboard() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [ensureProfile])
 
   useEffect(() => {
     loadDashboard()
-  }, [])
+  }, [loadDashboard])
 
   const handleUpload = async (event) => {
     event.preventDefault()
@@ -245,7 +245,9 @@ function WorkerDashboard() {
                 >
                   <div>
                     <p className="font-medium text-slate-900">{doc.type}</p>
-                    <p className="text-xs text-slate-500">Updated {doc.updatedAt}</p>
+                    <p className="text-xs text-slate-500">
+                      Submitted {doc.createdAt}
+                    </p>
                   </div>
                   <span
                     className={`text-sm font-semibold px-3 py-1 rounded-full ${

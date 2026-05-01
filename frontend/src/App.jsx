@@ -11,6 +11,15 @@ const roleHome = {
   admin: '/admin',
 }
 
+const decodeBase64Url = (value) => {
+  if (!value) {
+    return ''
+  }
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/')
+  const padding = '='.repeat((4 - (normalized.length % 4)) % 4)
+  return atob(`${normalized}${padding}`)
+}
+
 const getRoleFromToken = (token) => {
   if (!token) {
     return null
@@ -22,7 +31,7 @@ const getRoleFromToken = (token) => {
   }
 
   try {
-    const payload = JSON.parse(atob(tokenParts[1]))
+    const payload = JSON.parse(decodeBase64Url(tokenParts[1]))
     return payload?.role?.toLowerCase() || null
   } catch {
     return null
