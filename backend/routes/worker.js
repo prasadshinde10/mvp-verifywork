@@ -25,12 +25,12 @@ const requireWorker = (req, res, next) => {
     return res.status(403).json({ error: 'Access denied: worker role required' });
   }
 
-  return next();
+  next();
 };
 
+router.use(workerLimiter);
 router.use(auth);
 router.use(requireWorker);
-router.use(workerLimiter);
 
 router.post('/profile', createProfile);
 router.get('/profile', getProfile);

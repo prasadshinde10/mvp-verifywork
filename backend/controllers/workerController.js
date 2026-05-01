@@ -7,6 +7,7 @@ const pool = require('../config/db');
 const BUCKET_NAME = process.env.SUPABASE_WORKER_DOCUMENTS_BUCKET || 'worker-documents';
 const ALLOWED_EXTENSIONS = new Set(['.pdf', '.jpg', '.jpeg', '.png']);
 const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
+const DEFAULT_SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 7;
 let supabaseClient;
 
 const getSupabaseClient = () => {
@@ -135,13 +136,13 @@ const uploadDocument = async (req, res) => {
     return res.status(400).json({ error: 'Unsupported document mime type' });
   }
 
-  const safeDocType = docType.trim().replace(/[^a-z0-9_-]/gi, '');
+  const sanitizedDocTypeForFilename = docType.trim().replace(/[^a-z0-9_-]/gi, '');
 
-  if (!safeDocType) {
+  if (!sanitizedDocTypeForFilename) {
     return res.status(400).json({ error: 'Invalid doc_type value' });
   }
 
-  const fileName = `${req.user.id}/${safeDocType}-${uuidv4()}${extension}`;
+  const fileName = `${req.user.id}/${sanitizedDocTypeForFilename}-${uuidv4()}${extension}`;
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET_NAME)
@@ -163,10 +164,12 @@ const uploadDocument = async (req, res) => {
     fileUrl = publicUrlData?.publicUrl;
   } else {
     const expiresInRaw = Number.parseInt(
-      process.env.SUPABASE_SIGNED_URL_EXPIRES_IN || '604800',
+      process.env.SUPABASE_SIGNED_URL_EXPIRES_IN || `${DEFAULT_SIGNED_URL_EXPIRY_SECONDS}`,
       10
     );
-    const expiresIn = Number.isNaN(expiresInRaw) ? 604800 : expiresInRaw;
+    const expiresIn = Number.isNaN(expiresInRaw)
+      ? DEFAULT_SIGNED_URL_EXPIRY_SECONDS
+      : expiresInRaw;
     const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from(BUCKET_NAME)
       .createSignedUrl(fileName, expiresIn);
