@@ -21,8 +21,12 @@ function Login() {
       })
 
       const token = response.data?.token
-      const role = response.data?.role || response.data?.user?.role
-      const name = response.data?.user?.name || response.data?.user?.fullName
+      const user = response.data?.user || {}
+      const role = response.data?.role || user.role
+      const email = response.data?.email || user.email
+      const name = user.name || user.fullName
+      const fallbackName = email ? email.split('@')[0] : ''
+      const resolvedName = name || fallbackName
 
       if (token) {
         localStorage.setItem('token', token)
@@ -30,8 +34,11 @@ function Login() {
       if (role) {
         localStorage.setItem('userRole', role)
       }
-      if (name) {
-        localStorage.setItem('userName', name)
+      if (resolvedName) {
+        localStorage.setItem('userName', resolvedName)
+      }
+      if (email) {
+        localStorage.setItem('userEmail', email)
       }
 
       const normalizedRole = role?.toLowerCase()
