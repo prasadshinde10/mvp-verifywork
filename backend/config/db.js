@@ -2,7 +2,9 @@ const { Pool } = require('pg');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: {
+    rejectUnauthorized: process.env.PG_SSL_REJECT_UNAUTHORIZED !== 'false',
+  },
 });
 
 pool
@@ -12,7 +14,7 @@ pool
     client.release();
   })
   .catch((error) => {
-    console.error(error);
+    console.error('Failed to connect to database:', error);
   });
 
 module.exports = pool;
