@@ -4,7 +4,9 @@ const { createClient } = require('@supabase/supabase-js');
 
 const pool = require('../config/db');
 
-const BUCKET_NAME = 'worker-documents';
+const BUCKET_NAME = process.env.SUPABASE_WORKER_DOCUMENTS_BUCKET || 'worker-documents';
+const ALLOWED_EXTENSIONS = new Set(['.pdf', '.jpg', '.jpeg', '.png']);
+const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 let supabaseClient;
 
 const getSupabaseClient = () => {
@@ -123,8 +125,23 @@ const uploadDocument = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 
-  const extension = path.extname(file.originalname || '');
-  const fileName = `${req.user.id}/${docType}-${uuidv4()}${extension}`;
+  const extension = path.extname(file.originalname || '').toLowerCase();
+
+  if (!ALLOWED_EXTENSIONS.has(extension)) {
+    return res.status(400).json({ error: 'Unsupported document type' });
+  }
+
+  if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+    return res.status(400).json({ error: 'Unsupported document mime type' });
+  }
+
+  const safeDocType = docType.trim().replace(/[^a-z0-9_-]/gi, '');
+
+  if (!safeDocType) {
+    return res.status(400).json({ error: 'Invalid doc_type value' });
+  }
+
+  const fileName = `${req.user.id}/${safeDocType}-${uuidv4()}${extension}`;
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET_NAME)
@@ -138,8 +155,29 @@ const uploadDocument = async (req, res) => {
     return res.status(500).json({ error: 'Failed to upload document' });
   }
 
-  const { data: publicUrlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(fileName);
-  const fileUrl = publicUrlData?.publicUrl;
+  const usePublicUrl = process.env.SUPABASE_STORAGE_PUBLIC === 'true';
+  let fileUrl;
+
+  if (usePublicUrl) {
+    const { data: publicUrlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+    fileUrl = publicUrlData?.publicUrl;
+  } else {
+    const expiresInRaw = Number.parseInt(
+      process.env.SUPABASE_SIGNED_URL_EXPIRES_IN || '604800',
+      10
+    );
+    const expiresIn = Number.isNaN(expiresInRaw) ? 604800 : expiresInRaw;
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .createSignedUrl(fileName, expiresIn);
+
+    if (signedUrlError) {
+      console.error('Failed to create signed URL:', signedUrlError);
+      return res.status(500).json({ error: 'Failed to generate document URL' });
+    }
+
+    fileUrl = signedUrlData?.signedUrl;
+  }
 
   if (!fileUrl) {
     return res.status(500).json({ error: 'Failed to generate document URL' });
