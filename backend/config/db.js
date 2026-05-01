@@ -14,7 +14,11 @@ pool
     client.release();
   })
   .catch((error) => {
-    console.error('Failed to connect to database:', error);
+    console.error(
+      'Failed to connect to database. Verify DATABASE_URL and SSL settings are correct.',
+      error
+    );
+    process.exit(1);
   });
 
 module.exports = pool;
