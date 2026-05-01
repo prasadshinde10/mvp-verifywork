@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 
 const pool = require('../config/db');
 
+const MIN_PASSWORD_LENGTH = 8;
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('invalid_password', 10);
+
 const getJwtSecret = () => {
   if (!process.env.JWT_SECRET) {
     throw new Error('JWT_SECRET is not configured');
@@ -16,6 +19,12 @@ const register = async (req, res) => {
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return res
+      .status(400)
+      .json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
   }
 
   try {
@@ -61,9 +70,10 @@ const login = async (req, res) => {
     }
 
     const user = result.rows[0];
-    const passwordMatches = await bcrypt.compare(password, user.password);
+    const passwordHash = user ? user.password : DUMMY_PASSWORD_HASH;
+    const passwordMatches = await bcrypt.compare(password, passwordHash);
 
-    if (!passwordMatches) {
+    if (!user || !passwordMatches) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
