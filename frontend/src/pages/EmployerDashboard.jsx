@@ -21,7 +21,8 @@ function EmployerDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
-  const employerName = localStorage.getItem('userName') || 'Employer'
+  const storedName = localStorage.getItem('userName')
+  const employerName = storedName || 'Employer'
   const userEmail = localStorage.getItem('userEmail') || ''
 
   const handleLogout = () => {
@@ -33,12 +34,11 @@ function EmployerDashboard() {
   }
 
   const ensureEmployerProfile = async () => {
-    const fallbackName = userEmail ? userEmail.split('@')[0] : employerName
-    const profileName = employerName || fallbackName || 'Employer'
+    const fallbackName = userEmail ? userEmail.split('@')[0] : null
+    const profileName = storedName || fallbackName || 'Employer'
     const payload = {
       company_name: `${profileName} Co.`,
       contact_name: profileName,
-      phone: '0000000000',
       city: 'Nairobi',
     }
     try {

@@ -11,40 +11,12 @@ const roleHome = {
   admin: '/admin',
 }
 
-const decodeBase64Url = (value) => {
-  if (!value) {
-    return ''
-  }
-  const normalized = value.replace(/-/g, '+').replace(/_/g, '/')
-  const padding = '='.repeat((4 - (normalized.length % 4)) % 4)
-  return atob(`${normalized}${padding}`)
-}
-
-const getRoleFromToken = (token) => {
-  if (!token) {
-    return null
-  }
-
-  const tokenParts = token.split('.')
-  if (tokenParts.length < 2) {
-    return null
-  }
-
-  try {
-    const payload = JSON.parse(decodeBase64Url(tokenParts[1]))
-    return payload?.role?.toLowerCase() || null
-  } catch {
-    return null
-  }
-}
-
 const getStoredRole = () => {
   const storedRole = localStorage.getItem('userRole')
   if (storedRole) {
     return storedRole.toLowerCase()
   }
-
-  return getRoleFromToken(localStorage.getItem('token'))
+  return null
 }
 
 const getRoleRedirect = (role) => roleHome[role] || '/login'

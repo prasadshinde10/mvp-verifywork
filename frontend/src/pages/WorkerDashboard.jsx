@@ -95,7 +95,8 @@ function WorkerDashboard() {
   const [trustScore, setTrustScore] = useState(0)
   const [scoreBreakdown, setScoreBreakdown] = useState(DEFAULT_BREAKDOWN)
 
-  const workerName = localStorage.getItem('userName') || 'Worker'
+  const storedName = localStorage.getItem('userName')
+  const workerName = storedName || 'Worker'
   const userEmail = localStorage.getItem('userEmail') || ''
 
   const layers = useMemo(
@@ -127,9 +128,10 @@ function WorkerDashboard() {
       if (err.response?.status !== 404) {
         throw err
       }
-      const fallbackName = userEmail ? userEmail.split('@')[0] : workerName
+      const fallbackName = userEmail ? userEmail.split('@')[0] : null
+      const profileName = storedName || fallbackName || 'Worker'
       const createPayload = {
-        full_name: workerName || fallbackName || 'Worker',
+        full_name: profileName,
         trade: 'General',
         city: 'Nairobi',
         years_experience: 0,
