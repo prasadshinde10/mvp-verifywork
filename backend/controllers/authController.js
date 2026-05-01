@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 
 const MIN_PASSWORD_LENGTH = 8;
-const DUMMY_PASSWORD_HASH = bcrypt.hashSync('invalid_password', 10);
+const DUMMY_PASSWORD_HASH = '$2b$10$KM1PymY4OBT4Gjlid4kbP.RDeGWFUj8XwAs3STJFPodpniZiRkQDq';
 
 const getJwtSecret = () => {
   if (!process.env.JWT_SECRET) {
