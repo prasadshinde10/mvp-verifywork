@@ -1,21 +1,74 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 
+const docTypeLabels = {
+  aadhaar: 'Aadhaar',
+  iti_cert: 'ITI Certificate',
+  skill_cert: 'Skill Certificate',
+  reference: 'Reference Letter',
+}
+
+const formatDocType = (docType) => docTypeLabels[docType] || docType || 'Document'
+
+const formatDate = (value) => {
+  if (!value) {
+    return 'N/A'
+  }
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return 'N/A'
+  }
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  })
+}
+
 function AdminPanel() {
-  const [pendingDocs, setPendingDocs] = useState([
-    { id: 201, worker: 'John Mwangi', type: 'Government ID', submittedAt: 'Apr 24, 2026' },
-    { id: 202, worker: 'Linda Korir', type: 'Trade Certificate', submittedAt: 'Apr 26, 2026' },
-    { id: 203, worker: 'Samuel Wanjala', type: 'Employment Proof', submittedAt: 'Apr 27, 2026' },
-  ])
+  const navigate = useNavigate()
+  const [pendingDocs, setPendingDocs] = useState([])
   const [actionStatus, setActionStatus] = useState('')
   const [processingId, setProcessingId] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userRole')
+    localStorage.removeItem('userName')
+    localStorage.removeItem('userEmail')
+    navigate('/login', { replace: true })
+  }
+
+  const loadPendingDocuments = async () => {
+    setIsLoading(true)
+    setLoadError('')
+    try {
+      const response = await api.get('/api/admin/documents/pending')
+      setPendingDocs(response.data || [])
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Unable to load pending documents.'
+      setLoadError(message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadPendingDocuments()
+  }, [])
 
   const handleAction = async (docId, status) => {
     setProcessingId(docId)
     setActionStatus('')
 
     try {
-      await api.patch(`/api/admin/documents/${docId}`, { status })
+      await api.patch(`/api/admin/documents/${docId}/review`, { status })
       setPendingDocs((prev) => prev.filter((doc) => doc.id !== docId))
       setActionStatus(`Document ${status === 'approved' ? 'approved' : 'rejected'}.`)
     } catch (err) {
@@ -32,11 +85,20 @@ function AdminPanel() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6 py-5">
-          <p className="text-sm text-slate-500">Admin Panel</p>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Pending document reviews
-          </h1>
+        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm text-slate-500">Admin Panel</p>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              Pending document reviews
+            </h1>
+          </div>
+          <button
+            type="button"
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
         </div>
       </header>
 
@@ -48,6 +110,12 @@ function AdminPanel() {
               {pendingDocs.length} pending
             </span>
           </div>
+
+          {loadError ? (
+            <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-700">
+              {loadError}
+            </div>
+          ) : null}
 
           {actionStatus ? (
             <div className="mt-4 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-600">
@@ -69,10 +137,14 @@ function AdminPanel() {
                 {pendingDocs.map((doc) => (
                   <tr key={doc.id}>
                     <td className="py-3 pr-4 text-slate-900 font-medium">
-                      {doc.worker}
+                      {doc.worker_name || 'Worker'}
                     </td>
-                    <td className="py-3 pr-4 text-slate-600">{doc.type}</td>
-                    <td className="py-3 pr-4 text-slate-600">{doc.submittedAt}</td>
+                    <td className="py-3 pr-4 text-slate-600">
+                      {formatDocType(doc.doc_type)}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-600">
+                      {formatDate(doc.created_at)}
+                    </td>
                     <td className="py-3 text-right space-x-2">
                       <button
                         type="button"
@@ -95,8 +167,11 @@ function AdminPanel() {
                 ))}
               </tbody>
             </table>
-            {!pendingDocs.length ? (
+            {!pendingDocs.length && !isLoading ? (
               <p className="mt-4 text-sm text-slate-500">No pending documents.</p>
+            ) : null}
+            {isLoading ? (
+              <p className="mt-4 text-sm text-slate-500">Loading documents...</p>
             ) : null}
           </div>
         </div>

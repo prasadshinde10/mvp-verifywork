@@ -30,7 +30,7 @@ const register = async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO users (email, password, role, name) VALUES ($1, $2, $3, $4) RETURNING id, email, role',
+      'INSERT INTO users (email, password, role, name) VALUES ($1, $2, $3, $4) RETURNING id, email, role, name',
       [email, hashedPassword, role || null, name || null]
     );
 
@@ -41,7 +41,7 @@ const register = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    return res.status(201).json({ token });
+    return res.status(201).json({ token, user });
   } catch (error) {
     if (error.code === '23505') {
       return res.status(409).json({ error: 'Email already registered' });
@@ -61,7 +61,7 @@ const login = async (req, res) => {
 
   try {
     const result = await pool.query(
-      'SELECT id, email, role, password FROM users WHERE email = $1',
+      'SELECT id, email, role, name, password FROM users WHERE email = $1',
       [email]
     );
 
@@ -79,7 +79,15 @@ const login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    return res.json({ token });
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      },
+    });
   } catch (error) {
     console.error('Login failed:', error);
     return res.status(500).json({ error: 'Login failed' });
