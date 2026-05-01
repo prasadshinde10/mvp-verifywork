@@ -128,11 +128,13 @@ function EmployerDashboard() {
         min_trust_score: formState.minTrustScore,
       }
       const response = await api.post('/api/employer/jobs', payload)
-      const newJob = response.data || {
-        id: Date.now(),
-        trade_required: formState.tradeRequired,
-        min_trust_score: formatNumber(formState.minTrustScore, 0),
-      }
+      const newJob = response.data?.id
+        ? response.data
+        : {
+            id: Date.now(),
+            trade_required: formState.tradeRequired,
+            min_trust_score: formatNumber(formState.minTrustScore, 0),
+          }
       setJobs((prev) => [newJob, ...prev])
       setFormState({ tradeRequired: 'General', minTrustScore: '20' })
       setActiveJobId(newJob.id)

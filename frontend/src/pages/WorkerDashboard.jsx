@@ -139,7 +139,7 @@ function WorkerDashboard() {
       const created = await api.post('/api/worker/profile', createPayload)
       return created.data
     }
-  }, [userEmail, workerName])
+  }, [storedName, userEmail])
 
   const loadDashboard = useCallback(async () => {
     setIsLoading(true)
