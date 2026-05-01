@@ -136,13 +136,13 @@ const uploadDocument = async (req, res) => {
     return res.status(400).json({ error: 'Unsupported document mime type' });
   }
 
-  const sanitizedDocTypeForFilename = docType.trim().replace(/[^a-z0-9_-]/gi, '');
+  const sanitizedDocType = docType.trim().replace(/[^a-z0-9_-]/gi, '');
 
-  if (!sanitizedDocTypeForFilename) {
+  if (!sanitizedDocType) {
     return res.status(400).json({ error: 'Invalid doc_type value' });
   }
 
-  const fileName = `${req.user.id}/${sanitizedDocTypeForFilename}-${uuidv4()}${extension}`;
+  const fileName = `${req.user.id}/${sanitizedDocType}-${uuidv4()}${extension}`;
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET_NAME)
@@ -164,7 +164,7 @@ const uploadDocument = async (req, res) => {
     fileUrl = publicUrlData?.publicUrl;
   } else {
     const expiresInRaw = Number.parseInt(
-      process.env.SUPABASE_SIGNED_URL_EXPIRES_IN || `${DEFAULT_SIGNED_URL_EXPIRY_SECONDS}`,
+      process.env.SUPABASE_SIGNED_URL_EXPIRES_IN || DEFAULT_SIGNED_URL_EXPIRY_SECONDS,
       10
     );
     const expiresIn = Number.isNaN(expiresInRaw)
