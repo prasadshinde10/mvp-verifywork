@@ -6,6 +6,8 @@ require('./config/db');
 const authRoutes = require('./routes/auth');
 const workerRoutes = require('./routes/worker');
 const scoreRoutes = require('./routes/score');
+const employerRoutes = require('./routes/employer');
+const adminRoutes = require('./routes/admin');
 
 if (!process.env.JWT_SECRET) {
   console.error('JWT_SECRET is not configured.');
@@ -20,6 +22,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/worker', workerRoutes);
 app.use('/api/score', scoreRoutes);
+app.use('/api/employer', employerRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });

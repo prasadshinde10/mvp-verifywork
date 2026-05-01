@@ -60,13 +60,7 @@ const computeBreakdown = (documents, yearsExperience) => {
   return { breakdown, trustScore };
 };
 
-const computeTrustScore = async (req, res) => {
-  const workerId = Number.parseInt(req.params.worker_id, 10);
-
-  if (Number.isNaN(workerId)) {
-    return res.status(400).json({ error: 'Invalid worker_id' });
-  }
-
+const computeTrustScoreForWorker = async (workerId) => {
   const client = await pool.connect();
 
   try {
@@ -78,8 +72,9 @@ const computeTrustScore = async (req, res) => {
     );
 
     if (!workerResult.rows.length) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Worker profile not found' });
+      const error = new Error('Worker profile not found');
+      error.status = 404;
+      throw error;
     }
 
     const documentsResult = await client.query(
@@ -114,20 +109,40 @@ const computeTrustScore = async (req, res) => {
 
     await client.query('COMMIT');
 
-    return res.json({
+    return {
       trust_score: trustScore,
       breakdown,
       status_label: statusLabel,
-    });
+    };
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error(`Failed to compute trust score for worker ${workerId}:`, error);
-    return res.status(500).json({ error: 'Failed to compute trust score' });
+    throw error;
   } finally {
     client.release();
   }
 };
 
+const computeTrustScore = async (req, res) => {
+  const workerId = Number.parseInt(req.params.worker_id, 10);
+
+  if (Number.isNaN(workerId)) {
+    return res.status(400).json({ error: 'Invalid worker_id' });
+  }
+
+  try {
+    const result = await computeTrustScoreForWorker(workerId);
+    return res.json(result);
+  } catch (error) {
+    if (error.status === 404) {
+      return res.status(404).json({ error: 'Worker profile not found' });
+    }
+
+    console.error(`Failed to compute trust score for worker ${workerId}:`, error);
+    return res.status(500).json({ error: 'Failed to compute trust score' });
+  }
+};
+
 module.exports = {
+  computeTrustScoreForWorker,
   computeTrustScore,
 };
