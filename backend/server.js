@@ -3,11 +3,19 @@ const cors = require('cors');
 
 require('dotenv').config();
 require('./config/db');
+const authRoutes = require('./routes/auth');
+
+if (!process.env.JWT_SECRET) {
+  console.error('JWT_SECRET is not configured.');
+  process.exit(1);
+}
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
