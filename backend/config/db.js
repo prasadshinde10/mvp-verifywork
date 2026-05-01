@@ -8,10 +8,9 @@ const pool = new Pool({
 });
 
 pool
-  .connect()
-  .then((client) => {
+  .query('SELECT 1')
+  .then(() => {
     console.log('Connected to database');
-    client.release();
   })
   .catch((error) => {
     console.error(
