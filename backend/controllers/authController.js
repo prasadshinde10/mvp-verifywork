@@ -65,10 +65,6 @@ const login = async (req, res) => {
       [email]
     );
 
-    if (!result.rows.length) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
     const user = result.rows[0];
     const passwordHash = user ? user.password : DUMMY_PASSWORD_HASH;
     const passwordMatches = await bcrypt.compare(password, passwordHash);
