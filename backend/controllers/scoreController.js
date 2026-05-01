@@ -121,7 +121,7 @@ const computeTrustScore = async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Failed to compute trust score:', error);
+    console.error('Failed to compute trust score for worker', workerId, ':', error);
     return res.status(500).json({ error: 'Failed to compute trust score' });
   } finally {
     client.release();
