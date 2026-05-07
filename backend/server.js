@@ -29,6 +29,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.get('/', (req, res) => {
+  res.status(200).send('Welcome to the VerifyWork API. Navigate to /api/health for status.');
+});
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => {
