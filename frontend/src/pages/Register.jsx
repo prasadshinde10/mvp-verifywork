@@ -4,6 +4,7 @@ import api from '../api/axios'
 
 function Register() {
   const navigate = useNavigate()
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('worker')
@@ -16,7 +17,8 @@ function Register() {
     setIsSubmitting(true)
 
     try {
-      await api.post('/api/auth/register', {
+      await api.post('/auth/register', {
+        name,
         email,
         password,
         role,
@@ -42,6 +44,17 @@ function Register() {
         </p>
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
+            <label className="text-sm font-medium text-slate-700">Full Name</label>
+            <input
+              type="text"
+              className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Full name"
+              required
+            />
+          </div>
+          <div>
             <label className="text-sm font-medium text-slate-700">Email</label>
             <input
               type="email"
@@ -60,6 +73,7 @@ function Register() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Create a secure password"
+              minLength="8"
               required
             />
           </div>
